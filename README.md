@@ -138,3 +138,15 @@ QueryBuilder will defautly take first 25 records from query. But you can per pag
 
 For example setting per page = 10 and page number on 2 (Will return 11 - 20 record from query):
 ```?page[size]=10&page[number]=2```
+
+## Use total records
+```php
+public function index (\Illuminate\Http\Request $request) 
+{
+  $query = new QueryBuilder(\App\Contact::class, $request);
+  $query->getTotalRecords();
+}
+```
+
+QueryBuilder will return number of records of current query. 
+*Be careful to use getTotalRecords() before using applyPagination, or you will get only per page number of records not a total query records number*
