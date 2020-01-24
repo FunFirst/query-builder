@@ -36,6 +36,14 @@ public function index (\Illuminate\Http\Request $request)
 ```
 
 ## Use search
+```php
+public function index (\Illuminate\Http\Request $request) 
+{
+  $query = new QueryBuilder(\App\Contact::class, $request);
+  $query->applySearch();
+}
+```
+
 Query builder automatically fetche's from request url params and tries to find with where LIKE query in all searchable fields and relationship fields. 
 
 By default will QueryBuilder tries to search inside Fillable fields of Model
@@ -73,14 +81,6 @@ public $relationships = [
 ```
 QueryBuilder will than try to search inside relationship's fields. Relationship fields are defined on relationship model with same way as before -> defautly with ```$fillable``` property or can be customize with ```$searchableFields``` property
 
-```php
-public function index (\Illuminate\Http\Request $request) 
-{
-  $query = new QueryBuilder(\App\Contact::class, $request);
-  $query->applySearch();
-}
-```
-
 If you need to specify custom search query for some searchable fields, you can define custom query scopes that will be applied on QueryBuilder. Custom query scopes are defined by adding methods starting with 'scope' folowed by searchable field name. That method has to recieve two parameters $query (current QueryBuilder query) and $value (Searched value). 
 
 Define custom searchable field:
@@ -102,3 +102,24 @@ public function scopeName($query, $value): void
       ->where('last_name', $lastName);
 }
 ```
+
+## Use scopes
+```php
+public function index (\Illuminate\Http\Request $request) 
+{
+  $query = new QueryBuilder(\App\Contact::class, $request);
+  $query->applyScopes();
+}
+```
+
+Scopes can be used to apply custom model scopes on query. QueryBuilder will automatically fetch value of scopes url param. Then will QueryBuilder try to apply them on query. Scopes from url param has to be defined on model. Custom query scopes are defined by adding methods starting with 'scope' folowed by searchable field name. That method has to recieve two parameters $query (current QueryBuilder query). If scope method is not found on model, QueryBuilder will skip that scope.
+
+#### For example passing &scopes[]=woman via request:
+Define custom scope:
+```php
+public function scopeWoman($query): void
+{
+    $query->where('gender', 'WOMAN')
+}
+```
+After that all contacts left in query will have gender === 'WOMAN'.
