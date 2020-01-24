@@ -71,7 +71,7 @@ public $relationships = [
   ],
 ];
 ```
-QueryBuilder will than try to search inside relationship's fields. Relationship fields are defined on relationship model with same was as before -> defautly with ```$fillable``` property or can be customize with ```$searchableFields``` property
+QueryBuilder will than try to search inside relationship's fields. Relationship fields are defined on relationship model with same way as before -> defautly with ```$fillable``` property or can be customize with ```$searchableFields``` property
 
 ```php
 public function index (\Illuminate\Http\Request $request) 
@@ -79,5 +79,26 @@ public function index (\Illuminate\Http\Request $request)
   $query = new QueryBuilder(\App\Contact::class, $request);
   $query->applySearch();
 }
+```
 
+If you need to specify custom search query for some searchable fields, you can define custom query scopes that will be applied on QueryBuilder. Custom query scopes are defined by adding methods starting with 'scope' folowed by searchable field name. That method has to recieve two parameters $query (current QueryBuilder query) and $value (Searched value). 
+
+Define custom searchable field:
+```php
+protected $searchableFields = [
+  'name' // Name is not column inside models table.
+];
+```
+
+Define custom scope:
+```php
+public function scopeName($query, $value): void
+{
+    $explodedName = explode(' ', $value);
+    $firstName = $explodedName[0];
+    $lastName = $explodedName[1];
+    
+    $query->where('first_name', $firstName)
+      ->where('last_name', $lastName);
+}
 ```
