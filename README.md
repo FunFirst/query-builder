@@ -11,6 +11,7 @@ Laravel package used to work with eloquent query.
 8. Sort
 
 
+Because QueryBuilder extends \Illuminate\Database\Eloquent\Builder, you can use query builder as you are used to in Laravel application.
 Optimalized to work with FromRequests.
 
 ## Initialize query
@@ -114,7 +115,7 @@ public function index (\Illuminate\Http\Request $request)
 
 Scopes can be used to apply custom model scopes on query. QueryBuilder will automatically fetch value of scopes url param. Then will QueryBuilder try to apply them on query. Scopes from url param has to be defined on model. Custom query scopes are defined by adding methods starting with 'scope' folowed by searchable field name. That method has to recieve two parameters $query (current QueryBuilder query). If scope method is not found on model, QueryBuilder will skip that scope.
 
-#### For example passing &scopes[]=woman via request:
+#### For example passing ```?scopes[]=woman``` via request:
 Define custom scope:
 ```php
 public function scopeWoman($query): void
@@ -123,3 +124,17 @@ public function scopeWoman($query): void
 }
 ```
 After that all contacts left in query will have gender === 'WOMAN'.
+
+## Use pagination
+```php
+public function index (\Illuminate\Http\Request $request) 
+{
+  $query = new QueryBuilder(\App\Contact::class, $request);
+  $query->applyPagination();
+}
+```
+
+QueryBuilder will defautly take first 25 records from query. But you can per page and page inside request url params that will be automatically fetched by QueryBuilder. 
+
+For example setting per page = 10 and page number on 2 (Will return 11 - 20 record from query):
+```?page[size]=10&page[number]=2```
