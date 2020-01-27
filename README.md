@@ -209,3 +209,41 @@ After that QueryBuilder will automatically include all relationships.
 As addition to includes, properties that are defined in allowed fields (more information in Use fields) are included automatically.
 
 If includes are not defined in URL param. QueryBuilder will try to find default includes in Model. Default includes are defined as public property ```protected $defaultIncludes = []```. Values inside that array should be defined in same manner as in URL param described above. Same as with URL params all values has to be defined inside relationship property on model, or relationship will be skipped.
+
+## Use filters
+```php
+public function index (\Illuminate\Http\Request $request) 
+{
+  $query = new QueryBuilder(\App\Contact::class, $request);
+  $query->applyFilters();
+}
+```
+
+Filters can be applied to QueryBuilder. Mainly will QueryBuilder try to fetch filters from request URL param ```filter```. Filter URL param is defined in following way:
+
+```php
+filter[type]=OR&filter[values][0][type]=AND&filter[values][0][values][0][field]=first_name&filter[values][0][values][0][comparison]=IS&filter[values][0][values][0][value]=John+Doe&filter[values][0][values][1][field]=email&filter[values][0][values][1][comparison]=HAS_ANY_VALUE&scopes[]=person
+```
+
+parsed to array:
+
+```php
+$filter = [
+  'type' => 'OR',
+  'values' => [
+     'type' => 'AND', 
+     'values' => [
+          0 => [
+              'field' => 'first_name',
+              'comparison' => 'IS',
+              'value' => 'John',
+          ],
+          1 => [
+              'field' => 'email',
+              'comparison' => 'HAS_ANY_VALUE',
+          ],
+      ],
+  ],
+];
+```
+
