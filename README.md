@@ -2,13 +2,14 @@
 Laravel package used to work with eloquent query. 
 
 1. Search
-2. Pagination
-3. Scopes
-4. Filter
-5. Includes
-6. Fields
+2. Scopes
+3. Filter
+4. Includes
+5. Fields
+6. Sort
 7. Total Records
-8. Sort
+8. Pagination
+
 
 
 Because QueryBuilder extends \Illuminate\Database\Eloquent\Builder, you can use query builder as you are used to in Laravel application.
