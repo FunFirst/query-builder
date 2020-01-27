@@ -150,3 +150,18 @@ public function index (\Illuminate\Http\Request $request)
 
 QueryBuilder will return number of records of current query. 
 *Be careful to use getTotalRecords() before using applyPagination, or you will get only per page number of records not a total query records number*
+
+## Use fields
+```php
+public function index (\Illuminate\Http\Request $request) 
+{
+  $query = new QueryBuilder(\App\Contact::class, $request);
+  $query->applyAllowedFields();
+}
+```
+
+Query builder can select just desired fields from query. You can specify allowed fields via request url param fields[]. Fields values has to exist in Model table, if not desired field value is skipped. As addition to that you can specify relationship fields, which means relationship will be fetched and only desired column will be returned, for example: ```relationship.name```. *Relationship fields does not need to be specify in includes, query will automaticlly resolve relationship include.* 
+
+If url param fields[] is not passed via URL, QueryBuilder will try to find defaults on model. Defaults are defined in public model property with name ```php public $returnFields = []```. In defaults can be defined model fields and even relationship fields with same manner as in URL param. 
+
+If not even defaults are defined all fields inside $fillable property of model will be returned.
