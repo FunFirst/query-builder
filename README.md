@@ -247,3 +247,102 @@ $filter = [
 ];
 ```
 
+As field you can specify model fields, relationship fields and custom filters from model.
+
+If you want to specify your own custom filtering logic, you need to add folowing to your model:
+  1. Add method ```public function shouldApplyCustomFilter($fieldName) {}```. This method will recieve $fieldName param that contains name of field that is desired to filter. In that function you can specify your own logic to determinate, if custom filter should be called. Example:
+
+```php
+public function shouldApplyCustomFilter($fieldName): bool
+{
+    // If Model has method with customFieldNameFitler
+    if (method_exists($this, 'custom' . $fieldName . 'Filter')) {
+        return true;
+    }
+    
+    // If $fieldName contains 'custom_field.'
+    if (substr($fieldName, 0, strlen('custom_field.')) === 'custom_field.') {
+        return true;
+    }
+    
+    // If $fieldName is defined inside property
+    if (array_key_exists($fieldName, $this->systemProperties)) {
+        return true;
+    }
+}
+```
+  2. If ```shouldApplyCustomFilter()``` returns ```true```, instead of QueryBuilder filter is called custom method from Model. QueryBuilder need sto know what is name of that custom method, so it is needed to define ```public function getCustomFilteringFunction($fieldName):string {}``` that returns method name. That will be called. Example:
+  
+```php
+public function shouldApplyCustomFilter($fieldName): bool
+{
+    if (method_exists($this, 'custom' . $fieldName . 'Filter')) {
+        return 'custom' . $fieldName . 'Filter';
+    }
+
+    if (substr($fieldName, 0, strlen('custom_field.')) === 'custom_field.') {
+        return 'filterInCustomFieldProperties';
+    }
+
+    if (array_key_exists($fieldName, $this->systemProperties)) {
+        return 'filterInSystemProperties';
+    }
+}
+```
+  3. After that is called that custom function. Function will recieve $query, $whereClauseType and $filter (can be used to apply filter logic on modified value and so...). Examples:
+```php
+public function filterInCustomFieldProperties($fieldName): bool
+{
+  $name = explode('.', $filter->getField())[1];
+        $query->{$whereClauseType . 'Has'}('properties', function ($q) use ($name, $filter) {
+            $q->where('type', 'CUSTOM')
+                ->where('name', $name);
+
+            $filterTypeClass = '\\App\\Utils\\QueryBuilder\\FilterTypes\\' . ucfirst(\Illuminate\Support\Str::camel(strtolower($filter->getComparison())));
+            $filterType = new $filterTypeClass('value', $filter->getValue());
+            $filterType($q, 'where');
+        });
+}
+```
+```php
+/**
+ *  Custom filter for name
+ *
+ *  @param
+ *  @return void
+ */
+public function customNameFilter($query, $whereClauseType, $filter): void
+{
+    list($firstNamePart, $secondNamePart) = explode(' ', $filter->getValue());
+    $query->{$whereClauseType}(function ($q) use ($firstNamePart, $secondNamePart, $filter) {
+        $q->whereHas('properties', function ($propertiesQuery) use ($firstNamePart, $filter) {
+            $propertiesQuery->where('type', 'SYSTEM')
+                ->where('name', 'first_name');
+
+            $filterTypeClass = '\\App\\Utils\\QueryBuilder\\FilterTypes\\' . ucfirst(\Illuminate\Support\Str::camel(strtolower($filter->getComparison())));
+            $filterType = new $filterTypeClass('value', $firstNamePart);
+            $filterType($propertiesQuery, 'where');
+        })->whereHas('properties', function ($propertiesQuery) use ($secondNamePart, $filter) {
+            $propertiesQuery->where('type', 'SYSTEM')
+                ->where('name', 'last_name');
+
+            $filterTypeClass = '\\App\\Utils\\QueryBuilder\\FilterTypes\\' . ucfirst(\Illuminate\Support\Str::camel(strtolower($filter->getComparison())));
+            $filterType = new $filterTypeClass('value', $secondNamePart);
+            $filterType($propertiesQuery, 'where');
+        });
+    });
+}
+```
+```php
+public function filterInSystemProperties($query, $whereClauseType, $filter)
+{
+    $query->{$whereClauseType . 'Has'}('properties', function ($q) use ($filter) {
+        $q->where('name', $filter->getField());
+
+        $filterTypeClass = '\\App\\Utils\\QueryBuilder\\FilterTypes\\' . ucfirst(\Illuminate\Support\Str::camel(strtolower($filter->getComparison())));
+        $filterType = new $filterTypeClass('value', $filter->getValue());
+        $filterType($q, 'where');
+    });
+}
+```
+  
