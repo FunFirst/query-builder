@@ -166,3 +166,46 @@ Query builder can select just desired fields from query. You can specify allowed
 If url param fields[] is not passed via URL, QueryBuilder will try to find defaults on model. Defaults are defined in public model property with name ```php public $returnFields = []```. In defaults can be defined model fields and even relationship fields with same manner as in URL param. 
 
 If not even defaults are defined all fields inside $fillable property of model will be returned.
+
+## Use includes
+```php
+public function index (\Illuminate\Http\Request $request) 
+{
+  $query = new QueryBuilder(\App\Contact::class, $request);
+  $query->applyIncludes();
+}
+```
+
+You can specify relationships that should be fetched with model records. That can be done via includes[] URL parameter. Inside includes should be specified desired relationships, in following manner: ```inludes[]=relationship```. To fetch desired relationship, Model has to have ```public $relationship = [] ``` property. This proprety has to be array and has to specify known relationships of Model. Example of ```$relationship``` property:
+
+```php
+public $relationships = [
+  'nameOfRelationshipMethod' => [
+    'class' => 'classOfRelatedModel',
+    'type' => 'typeOfRelationship',
+  ]
+];
+```
+
+```php
+public $relationships = [
+  'tags' => [
+    'class' => \App\Tag::class,
+    'type' => 'belongsToMany',
+  ],
+  'notes' => [
+    'class' => \App\Note::class,
+    'type' => 'belongsToMany',
+  ],
+  'files' => [
+    'class' => \App\File::class,
+    'type' => 'hasMany',
+  ],
+];
+```
+
+After that QueryBuilder will automatically include all relationships.
+
+As addition to includes, properties that are defined in allowed fields (more information in Use fields) are included automatically.
+
+If includes are not defined in URL param. QueryBuilder will try to find default includes in Model. Default includes are defined as public property ```protected $defaultIncludes = []```. Values inside that array should be defined in same manner as in URL param described above. Same as with URL params all values has to be defined inside relationship property on model, or relationship will be skipped.
