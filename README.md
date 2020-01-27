@@ -345,4 +345,18 @@ public function filterInSystemProperties($query, $whereClauseType, $filter)
     });
 }
 ```
-  
+ 
+ 
+## Usage in Requests
+Query builder is optiomalized to work with Requests. All function described above are wrapred inside resolve helper. All you need to do is insert following code into Request:
+
+```php
+public function handle()
+{
+    $query = QueryBuilder::for(Contact::class, $this)
+        ->resolve(['pagination' => false]);
+    $this->totalRecords = $query->getTotalRecords();
+    $query->applyPagination();
+    $this->data = $query->get();
+}
+```
