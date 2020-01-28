@@ -345,6 +345,68 @@ public function filterInSystemProperties($query, $whereClauseType, $filter)
     });
 }
 ```
+
+## Use sorts
+```php
+public function index (\Illuminate\Http\Request $request) 
+{
+  $query = new QueryBuilder(\App\Contact::class, $request);
+  $query->applySortBy();
+}
+```
+
+Query Builder will automatically fetch sort by fields from Request that are stored inside sort URL param.
+```?sort=name,-created_at``` There two posibilities how to sort. Be careful, order of sort matters!!!
+  1. Sort by table columns
+  2. Sort with custom sorting function defined on model
+  
+In first scenario, firstly is checked if given value from sort is existing column of model's table. If is order by is applied on query. If not value is skipped and not applied.
+
+In second scenario QueryBuilder provides way to define own sorting logic. You have to define ```public function getCustomSortingFunction($field) {}``` in your model. This function returns name of custom sorting function that should be called. Typically you will return sorting function name based on $field value. Example:
+
+```php
+public function getCustomSortingFunction($fieldName)
+{
+    if (method_exists($this, 'custom' . $fieldName . 'Sort')) {
+        return 'custom' . $fieldName . 'Sort';
+    }
+
+    if (substr($fieldName, 0, strlen('custom_field.')) === 'custom_field.') {
+        return 'sortByCustomFieldProperties';
+    }
+
+    if (array_key_exists($fieldName, $this->systemProperties)) {
+        return 'sortBySystemProperties';
+    }
+}
+```
+
+If method name returned from this function exists on model, this function is called with following parameters:
+  - $query - Current QueryBuilder query
+  - $field - Field from sort URL param
+  - $sortType - Sort Type -> DESC or ASC
+
+Example:
+```
+public function sortBySystemProperties($query, $field, $sortType): void
+{
+    $subQuery = \Illuminate\Support\Facades\DB::connection('tenant')
+        ->table('contacts as c')
+        ->select('c.id', 'p.value')
+        ->leftJoin('contact_property as cp', 'c.id', '=', 'cp.contact_id')
+        ->leftJoin('properties as p', 'p.id', '=', 'cp.property_id')
+        ->where('p.name', $field);
+
+    $query->leftJoinSub($subQuery, 'xx', function($join) {
+        $join->on('contacts.id', '=', 'xx.id');
+    });
+
+    $query->orderBy('value', $sortType);
+}
+```
+
+
+You can define if you want to order by ASC or DESC. This can be defined with '-' before field name in sort URL param. For example -id is DESC order by id, id is ASC order by id.
  
  
 ## Usage in Requests
